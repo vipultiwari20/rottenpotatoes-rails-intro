@@ -13,6 +13,14 @@ class MoviesController < ApplicationController
   def index
     @sorting_variable = params[:sorting_field]
     @movies = Movie.order(@sorting_variable)
+    @all_ratings = Movie.get_ratings 
+    if (params).key?(:ratings)
+	    @ratings_selected = params[:ratings]
+    	@movies = Movie.order(@sorting_variable).where(rating: params[:ratings].keys)
+    else
+	    @ratings_selected = Hash.new(@all_ratings)
+	    @movies = Movie.order(@sorting_variable)
+    end
   end
 
   def new
