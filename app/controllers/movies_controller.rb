@@ -13,13 +13,43 @@ class MoviesController < ApplicationController
   def index
     @sorting_variable = params[:sorting_field]
     @movies = Movie.order(@sorting_variable)
-    @all_ratings = Movie.get_ratings 
-    if (params).key?(:ratings)
+    @all_ratings = Movie.get_ratings
+    redirect = false
+    if params[:commit] =='Refresh' and params[:ratings].nil?
+      redirect = true
+      @ratings_selected = session[:ratings]
+      session[:ratings] = nil
+    elsif (params).key?(:ratings)
 	    @ratings_selected = params[:ratings]
-    	@movies = Movie.order(@sorting_variable).where(rating: params[:ratings].keys)
-    else
-	    @ratings_selected = Hash.new(@all_ratings)
-	    @movies = Movie.order(@sorting_variable)
+      session[:ratings] = params[:ratings]
+    elsif session[:ratings]
+	    @ratings_selected = session[:ratings]
+	    redirect = true
+    end
+    
+    if (params).key?(:sorting_field)
+	    @sorting_variable = params[:sorting_field]
+      session[:sorting_field] = @sorting_variable
+    elsif session[:sorting_field]
+	    @sorting_variable = session[:sorting_field]
+	    redirect = true
+    end
+    
+    if redirect 
+      flash.keep
+      redirect_to(:action=>'index', :sorting_field=>@sorting_variable, :ratings=>@ratings_selected)
+    end
+    
+    if @sorting_variable and @ratings_selected
+       @movies = Movie.where(:rating=>@ratings_selected.keys).order(@sorting_variable)
+    elsif @sorting_variable
+      @movies = Movie.all.order(@sorting_variable)
+      @ratings_selected = Hash.new(@all_ratings)
+    elsif @ratings_selected
+      @movies = Movie.where(:rating=>@ratings_selected.keys)
+    else 
+      @movies = Movie.all
+      @ratings_selected = Hash.new(@all_ratings)
     end
   end
 
